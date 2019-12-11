@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>登录-Travel Web v1.0</title>
+	<meta name="renderer" content="webkit">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport"
+		content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<link rel="stylesheet" type="text/css" href="./res/layui/css/layui.css">
+</head>
+
+<body>
+
+	<blockquote class="layui-elem-quote layui-text">welcome to login page</blockquote>
+	<form class="layui-form" id="loginform">
+		<div class="layui-form-item">
+			<label for="chick_id" class="layui-form-label">手机号</label>
+			<div class="layui-input-inline">
+				<input type="text" id="userName" name="userName" lay-verify="required" autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label for="success" class="layui-form-label">密码</label>
+			<div class="layui-input-inline">
+				<input type="password" id="password" name="password" lay-verify="required" autocomplete="off"
+					class="layui-input">
+			</div>
+		</div>
+
+		<div class="layui-form-item">
+			<div class="layui-input-block">
+				<button type="submit" class="layui-btn" lay-submit="" lay-filter="demo1">立即登录</button>
+				<button class="layui-btn layui-btn-primary"><a href="./register.html">注册</a></button>
+			</div>
+		</div>
+	</form>
+
+	<script src="./res/layui/layui.js"></script>
+	<script src="./res/js/jquery/1.9.1/jquery.min.js"></script>
+	<script src="./res/js/jquery/1.9.1/jquery.cookie.js"></script>
+	<script>
+		var globalURL = "http://localhost:8080/TravelWeb/";
+
+		layui.use(['form', 'jquery', 'util', 'layer', 'laydate', 'element', 'layedit'], function () {
+			var form = layui.form,
+				$ = layui.jquery,
+				util = layui.util,
+				laydate = layui.laydate,
+				element = layui.element,
+				layedit = layui.edit,
+				layer = layui.layer;
+
+			//监听提交
+			form.on('submit(demo1)', function (data) {
+
+				var newdata = {};
+				var f = $('#loginform').serializeArray();
+				$.each(f, function () {
+					console.log(this.name + " " + this.value);
+					newdata[this.name] = this.value;
+				});
+				newdata["uclass"] = 1;
+				var url = globalURL + "user/login";
+				$.ajax({
+					type: "POST",
+					url: url,
+					data: newdata,
+					dataType: "json",
+					success: function (data) {
+
+						if (data.status == 200) {
+							layer.msg('登录成功!', { icon: 1, time: 1000 });
+							$.cookie("LOCAL_TOKEN",data.data);
+							console.log(data);
+							
+							setTimeout("window.parent.location.href = 'index.html'", 1200);
+						} else if (data.status == 502) {
+							
+							layer.msg('密码不对!', { icon: 2, time: 1000 });
+						}
+					},
+					error: function (e) {
+						// console.log(data.msg);
+						layer.msg('登录失败!', { icon: 2, time: 1000 });
+					}
+				});
+
+				return false;
+			});
+
+			
+
+		});
+		
+	</script>
+</body>
+
+</html>

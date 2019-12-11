@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Document</title>
+  <link rel="stylesheet" type="text/css" href="./res/layui/css/layui.css">
+  <link rel="stylesheet" type="text/css" href="./res/css/main.css">
+  <style type="text/css">
+    body,
+    html {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      font-family: "微软雅黑";
+    }
+
+    #allmap {
+      width: 100%;
+      height: 500px;
+    }
+
+    p {
+      margin-left: 5px;
+      font-size: 14px;
+    }
+  </style>
+  <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=RBCVncm1GGfXfW6ReB2mMynbgIfZiT5L"></script>
+</head>
+
+<body>
+  <div class="header">
+    <div class="menu-btn">
+      <div class="menu"></div>
+    </div>
+    <h1 class="logo">
+      <a href="index.html">
+        <span>Travel</span>
+        <img src="./res/img/logo1.png">
+      </a>
+    </h1>
+    <div class="nav">
+      <a href="index.html">主页</a>
+    </div>
+    <ul class="layui-nav header-down-nav">
+      <li class="layui-nav-item"><a href="index.html">文章</a></li>
+    </ul>
+    <p class="welcome-text">
+      欢迎来到<span class="name">本</span>网站~
+    </p>
+  </div>
+
+  <div class="album-content w1000" id="layer-photos-demo" class="layer-photos-demo">
+    <div class="img-info">
+      <img src="" alt="" id="pic0">
+      <div class="title">
+        <p class="data">今日上传<span>2018/10/10</span></p>
+        <p class="text" id="spotName" style="font-size: 18px;"></p>
+        <p class="text" id="about"></p>
+        <p class="text" id="address"></p>
+      </div>
+    </div>
+    <div class="img-list">
+      <div class="layui-fluid" style="padding:0">
+        <div class="layui-row layui-col-space30 space" id="picSpace">
+       	<!-- 展示景点详情 -->
+         
+
+          <div id="allmap">
+          <!-- 展示地图 -->
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <br><br>
+
+	<blockquote class="layui-elem-quote layui-text">评论列表<span style="float: right"><button type="button" class="layui-btn layui-btn-primary layui-btn-sm" id="remarkButton">添加评论</button></span></blockquote>
+    <div style="padding: 20px; background-color: #F2F2F2;">
+	<div class="layui-row layui-col-space15" id="remarkspace">
+	<!-- 展示评论 -->
+	</div>
+	</div>
+	<br><br><br><br>
+
+  </div>
+
+
+  <div class="footer-wrap">
+    <div class="footer w1000">
+      <div class="qrcode">
+        <img src="./res/img/erweima.jpg">
+      </div>
+      <div class="practice-mode">
+        <img src="./res/img/down_img.jpg">
+        <div class="text">
+          <h4 class="title">我的联系方式</h4>
+          <p>QQ<span class="WeChat">1482735431</span></p>
+          <p>手机<span class="iphone">15751389223</span></p>
+          <p>邮箱<span class="email">1482735431@qq.com</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  <script src="./res/layui/layui.js"></script>
+  <script src="./res/js/jquery/1.9.1/jquery.min.js"></script>
+  <script src="./res/js/jquery/1.9.1/jquery.cookie.js"></script>
+  <script type="text/javascript">
+
+  </script>
+  <script type="text/javascript">
+    var globalURL = "http://localhost:8080/TravelWeb/";
+    
+    layui.config({
+      base: './res/js/util/'
+    }).use(['element', 'laypage', 'form', 'layer', 'menu'], function () {
+      element = layui.element
+        , laypage = layui.laypage
+        , form = layui.form
+        , layer = layui.layer
+        , menu = layui.menu;
+
+      layer.photos({
+        photos: '#layer-photos-demo'
+        , anim: 5 //0-6的选择，指定弹出图片动画类型，默认随机（请注意，3.0之前的版本用shift参数）
+        , tab: function (pic, layero) {
+          console.log(pic, layero)
+        }
+      });
+	  //定义一些变量
+      var latitude = null;
+	  var longitude = null;
+      var request = new GetRequest();
+      var spotId = request["spotId"];
+      var remark = null;
+	 
+      
+      menu.init();
+     
+      InitSpotDataById();
+
+      function InitMap() {
+        var map = new BMap.Map('allmap');
+        map.centerAndZoom(new BMap.Point(longitude, latitude), 16);
+        map.enableScrollWheelZoom(true);
+        // 覆盖区域图层测试
+        map.addTileLayer(new BMap.PanoramaCoverageLayer());
+
+        var stCtrl = new BMap.PanoramaControl(); //构造全景控件
+        stCtrl.setOffset(new BMap.Size(150, 20));
+        map.addControl(stCtrl);//添加全景控件
+      }
+
+      
+      function InitSpotDataById(){
+
+        var url = globalURL + "spot/selectById";
+				$.ajax({
+					type: "POST",
+					url: url,
+					data: {
+					    spotId:spotId
+					},
+					dataType: "json",
+					success: function (data) {
+
+						if (data.status == 200) {
+
+							latitude = data.data[0].latitude;
+							longitude = data.data[0].longitude;
+							$("#pic0").attr("src",".."+data.data[0].picture0.pic0);
+							$("#spotName").text(data.data[0].spotName);
+							$("#about").text(data.data[0].about);
+							$("#address").text(data.data[0].address);
+							
+							InitMap();
+							console.log(data.data[0].picture);
+							$.each(data.data[0].picture,function(i,val){
+							   console.log(val);
+							   $("<div class='layui-col-xs12 layui-col-sm4 layui-col-md4'><div class='item'><img src='.."+val.pic+"'>"
+						        +"<div class='cont-text'> <div class='data'>&nbsp;</div><p class='address'><i class='layui-icon layui-icon-location'></i><span>"+val.name+"</span></p>"
+						        +"<p class='briefly'>"+val.des+"</p></div></div></div>").prependTo("#picSpace");  
+							});
+							//加载评论
+							InitRemark();
+						}else{
+
+							layer.msg('展示失败!', { icon: 2, time: 1000 });
+						}
+					},
+					error: function (e) {
+						// console.log(data.msg);
+						layer.msg('添加失败!', { icon: 2, time: 1000 });
+					}
+        });
+        
+      }
+      
+      function InitRemark(){
+	  	
+	  var url = globalURL + "remark/selectBySpotId";
+		$.ajax({
+			type: "POST",
+			url: url,
+			data: {
+			    reSpotId:spotId
+			},
+			dataType: "json",
+			success: function (data) {
+
+				if (data.status == 200) {
+
+					console.log(data);
+					
+					   $.each(data.data,function(i,val){
+						   console.log(val);
+						   if($("#remark"+val.reId).length ==0){//该标签不存在  则添加
+						     
+						       $("<div class='layui-col-md12 layui-anim layui-anim-scaleSpring' id='remark"+val.reId+"'><div class='layui-card'><div class='layui-card-header'>"
+						       +"<span class='layui-badge layui-bg-blue'>"+val.userName+"</span><span style='float:right;'>"+val.reTime+"</span></div>"
+						       +"<div class='layui-card-body'>"+val.reContent+"</div></div></div>").prependTo("#remarkspace"); 
+						   }
+						   
+						   
+						});  
+				
+					
+				}else if(data.status == 601){
+				    $("<div class='layui-card-body' style='border-bottom: 1px solid #3d94ea;'>暂无评论！！</div>").appendTo("#remarkspace");  
+				}else{
+				    layer.msg('获取评论失败!', { icon: 2, time: 1000 });
+				}
+			},
+			error: function (e) {
+				// console.log(data.msg);
+				layer.msg('获取评论失败!', { icon: 2, time: 1000 });
+			}
+		});
+	  
+      }
+      
+      
+      $("#remarkButton").click(function(){
+	  
+	        layer.prompt({title: '输入评论，并确认', formType: 2}, function(text, index){
+	        	layer.close(index);
+	        	remark = text;
+	        	var user_id = $.cookie("LOCAL_TOKEN")
+	        	var url = globalURL + "remark/add";
+	 		$.ajax({
+	 			type: "POST",
+	 			url: url,
+	 			data: {
+	 			    reSpotId:spotId,
+	 			    reUserId:user_id,
+	 			    reContent:remark
+	 			},
+	 			dataType: "json",
+	 			success: function (data) {
+
+	 				if (data.status == 200) {
+	 				    layer.msg('评论成功!', { icon: 1, time: 1000 });
+						//重新加载评论	 				   
+	 				    InitRemark();
+	 				}else{
+	 					layer.msg('评论失败!', { icon: 2, time: 1000 });
+	 				}
+	 			},
+	 			error: function (e) {
+	 				layer.msg('评论失败!', { icon: 2, time: 1000 });
+	 			}
+	      	});
+	        
+	       
+});
+	  
+      });
+      //得到传参
+      function GetRequest() {
+          var url = location.search; //获取url中"?"符后的字串 
+          var theRequest = new Object();
+          if (url.indexOf("?") != -1) {
+              var str = url.substr(1);
+              strs = str.split("&");
+              for (var i = 0; i < strs.length; i++) {
+                  theRequest[strs[i].split("=")[0]] = unescape(strs[i].split("=")[1]);
+              }
+          }
+          return theRequest;
+      }
+    })
+  </script>
+</body>
+
+</html>
